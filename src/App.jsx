@@ -14,8 +14,8 @@ export default function App() {
     <Router>
       <div className="app-container">
         <Routes>
-          {/* <Route path="/" element={<RegisterForm />} />
-          <Route path="/login" element={<Login />} /> */}
+          <Route path="/" element={<RegisterForm />} />
+          <Route path="/login" element={<Login />} />
           <Route path="/home" element={<LandingPage />} />
           <Route path="/admin" element={<AdminPage />} />
           <Route path="/add-item" element={<AddItemPage />} />
