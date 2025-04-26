@@ -1,21 +1,28 @@
 import React, { useState } from "react";
-import { Link } from "react-router-dom";  // Import Link from react-router-dom
+import { useNavigate, Link } from "react-router-dom";
+import { db, ref, set } from "../firebase";
 
 export default function RegisterForm() {
-  const [newUser, setNewUser] = useState({
-    name: "",
-    password: "",
-    email: ""
-  });
+  const [newUser, setNewUser] = useState({ name: "", password: "" });
+  const navigate = useNavigate();
 
   const handleChange = (e) => {
     setNewUser({ ...newUser, [e.target.name]: e.target.value });
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    console.log("Registered user:", newUser);
-    // You can send this data to an API or backend here
+
+    try {
+      await set(ref(db, "users/" + newUser.name), {
+        name: newUser.name,
+        password: newUser.password,
+      });
+      alert("Registration successful! Please log in.");
+      navigate("/login"); // ✅ go to login page after register
+    } catch (error) {
+      console.error("Registration error:", error);
+    }
   };
 
   return (
@@ -31,7 +38,6 @@ export default function RegisterForm() {
           onChange={handleChange}
           required
         />
-
         <label htmlFor="password">Password:</label>
         <input
           type="password"
@@ -41,23 +47,9 @@ export default function RegisterForm() {
           onChange={handleChange}
           required
         />
-
-        <label htmlFor="email">Email:</label>
-        <input
-          type="email"
-          id="email"
-          name="email"
-          value={newUser.email}
-          onChange={handleChange}
-          required
-        />
-
         <button type="submit">Register</button>
       </form>
-
-      <div className="login-link">
-        <p>Already have an account? <Link to="/login">Login here</Link></p>
-      </div>
+      <p>Already have an account? <Link to="/login">Login here</Link></p>
     </div>
   );
 }

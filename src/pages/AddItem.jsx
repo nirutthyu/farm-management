@@ -1,11 +1,12 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
+import { db, ref, set,get,child, push, onValue } from '../firebase'; // Ensure the correct import path
 
 export default function AddItemPage() {
   const [product, setProduct] = useState('');
-  const [price, setPrice] = useState('');
+  const [quantity, setQuantity] = useState('');
   const [items, setItems] = useState([]);
-  const [farmerId] = useState('example_farmer_id');
+  const username = localStorage.getItem('username'); // Get logged-in username from localStorage
 
   const containerVariants = {
     hidden: { opacity: 0, x: 50 },
@@ -13,26 +14,39 @@ export default function AddItemPage() {
   };
 
   const handleAddItem = async () => {
-    if (!product || !price) return alert("Enter product and price");
+    if (!product || !quantity) return alert("Enter product and quantity");
 
-    const newItem = { farmerId, product, price: parseFloat(price) };
+    const newItem = { product, quantity: parseInt(quantity) };
 
     try {
-      const response = await fetch("http://localhost:5000/api/add-item", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(newItem)
-      });
+      const userRef = ref(db, `users/${username}/products`);
+      const newProductRef = push(userRef);
+      await set(newProductRef, newItem);
 
-      if (!response.ok) throw new Error("Request failed");
-
-      setItems(prev => [...prev, { product, price }]);
+      // Clear the input fields
       setProduct('');
-      setPrice('');
-    } catch (err) {
+      setQuantity('');
+    } catch (error) {
+      console.error("Firebase Error:", error);
       alert("Failed to add item");
     }
   };
+
+  // Fetch products specific to the logged-in user
+  useEffect(() => {
+    if (!username) return;
+
+    const userProductsRef = ref(db, `users/${username}/products`);
+    onValue(userProductsRef, (snapshot) => {
+      const data = snapshot.val();
+      if (data) {
+        const productArray = Object.values(data); // Convert data object to array
+        setItems(productArray); // Set the fetched products to the state
+      } else {
+        setItems([]); // Set an empty array if no products exist
+      }
+    });
+  }, [username]);
 
   return (
     <motion.div
@@ -53,9 +67,9 @@ export default function AddItemPage() {
         />
         <motion.input
           type="number"
-          placeholder="Price"
-          value={price}
-          onChange={(e) => setPrice(e.target.value)}
+          placeholder="Quantity"
+          value={quantity}
+          onChange={(e) => setQuantity(e.target.value)}
           className="input-field"
           whileFocus={{ scale: 1.02 }}
         />
@@ -70,14 +84,14 @@ export default function AddItemPage() {
       </div>
 
       <div className="items-display">
-        <h3>Added Items</h3>
+        <h3>Your Products</h3>
         {items.length === 0 ? (
           <p>No items added yet.</p>
         ) : (
           <ul>
             {items.map((item, index) => (
               <li key={index}>
-                <strong>{item.product}</strong>: ₹{item.price}
+                <strong>{item.product}</strong>: {item.quantity}
               </li>
             ))}
           </ul>

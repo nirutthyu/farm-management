@@ -1,19 +1,35 @@
 import React, { useState } from "react";
+import { useNavigate, Link } from "react-router-dom";
+import { db, ref, get, child } from "../firebase";
 
-export default function Login() {
-  const [loginData, setLoginData] = useState({
-    username: "",
-    password: ""
-  });
+export default function LoginForm() {
+  const [loginData, setLoginData] = useState({ name: "", password: "" });
+  const navigate = useNavigate();
 
   const handleChange = (e) => {
     setLoginData({ ...loginData, [e.target.name]: e.target.value });
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    console.log("Login data:", loginData);
-    // You can send this data to an API or backend here
+
+    const dbRef = ref(db);
+    try {
+      const snapshot = await get(child(dbRef, `users/${loginData.name}`));
+      if (snapshot.exists()) {
+        const userData = snapshot.val();
+        if (userData.password === loginData.password) {
+          localStorage.setItem("username", loginData.name); // ✅ Save to show on Landing Page
+          navigate("/home"); // ✅ Go to landing
+        } else {
+          alert("Incorrect password.");
+        }
+      } else {
+        alert("User not found.");
+      }
+    } catch (error) {
+      console.error("Login error:", error);
+    }
   };
 
   return (
@@ -24,12 +40,11 @@ export default function Login() {
         <input
           type="text"
           id="username"
-          name="username"
-          value={loginData.username}
+          name="name"
+          value={loginData.name}
           onChange={handleChange}
           required
         />
-
         <label htmlFor="password">Password:</label>
         <input
           type="password"
@@ -39,13 +54,9 @@ export default function Login() {
           onChange={handleChange}
           required
         />
-
         <button type="submit">Login</button>
       </form>
-
-      <div className="register-link">
-        <p>Don't have an account? <a href="/">Register here</a></p>
-      </div>
+      <p>Don't have an account? <Link to="/">Register</Link></p>
     </div>
   );
 }
