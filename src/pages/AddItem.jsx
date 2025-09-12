@@ -67,7 +67,7 @@ export default function AddItemPage() {
         />
         <motion.input
           type="number"
-          placeholder="Quantity"
+          placeholder="Price"
           value={quantity}
           onChange={(e) => setQuantity(e.target.value)}
           className="input-field"
