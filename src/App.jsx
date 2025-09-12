@@ -7,6 +7,7 @@ import FertilizerDetection from "./pages/FertilizerDetection";
 import SensorControl from "./pages/SensorControl";
 import RegisterForm from "./pages/RegisterForm";
 import Login from "./pages/Login"
+import DiseasePredictor from "./pages/DiseasePredictor"
 import "./App.css";
 
 export default function App() {
@@ -21,6 +22,7 @@ export default function App() {
           <Route path="/add-item" element={<AddItemPage />} />
           <Route path="/fertilizer-detection" element={<FertilizerDetection />} />
           <Route path="/sensor-control" element={<SensorControl />} />
+          <Route path="/disease-predictor" element={<DiseasePredictor />} />
         </Routes>
       </div>
     </Router>

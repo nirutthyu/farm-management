@@ -171,25 +171,59 @@ export default function LandingPage() {
         </p>
       </section>
 
-      <div className="admin-options">
-        <div className="option-card">
-          <h2>Add Products</h2>
-          <p>Add new products to the system.</p>
-          <Link to="/add-item" className="option-link">Go to Add Products</Link>
+           {/* Options Section */}
+      <div className="admin-options grid grid-cols-1 sm:grid-cols-2 gap-6 max-w-4xl mx-auto mt-8">
+        <div className="option-card p-6 bg-white rounded-xl shadow-md hover:shadow-lg">
+          <h2 className="text-lg font-bold mb-2">Add Products</h2>
+          <p className="text-gray-600 mb-4">Add new products to the system.</p>
+          <Link
+            to="/add-item"
+            className="option-link text-green-600 font-medium hover:underline"
+          >
+            Go to Add Products
+          </Link>
         </div>
 
-        <div className="option-card">
-          <h2>Manage Fertilizers</h2>
-          <p>Get smart fertilizer recommendations</p>
-          <Link to="/fertilizer-detection" className="option-link">Go to Manage Fertilizers</Link>
+        <div className="option-card p-6 bg-white rounded-xl shadow-md hover:shadow-lg">
+          <h2 className="text-lg font-bold mb-2">Manage Fertilizers</h2>
+          <p className="text-gray-600 mb-4">Get smart fertilizer recommendations.</p>
+          <Link
+            to="/fertilizer-detection"
+            className="option-link text-green-600 font-medium hover:underline"
+          >
+            Go to Manage Fertilizers
+          </Link>
         </div>
 
-        <div className="option-card">
-          <h2>Farm Reports</h2>
-          <p>View and generate reports for farm management.</p>
-          <Link to="/sensor-control" className="option-link">Go to Farm Reports</Link>
+        <div className="option-card p-6 bg-white rounded-xl shadow-md hover:shadow-lg">
+          <h2 className="text-lg font-bold mb-2">Farm Reports</h2>
+          <p className="text-gray-600 mb-4">
+            View and generate reports for farm management.
+          </p>
+          <Link
+            to="/sensor-control"
+            className="option-link text-green-600 font-medium hover:underline"
+          >
+            Go to Farm Reports
+          </Link>
+        </div>
+
+        <div className="option-card p-6 bg-white rounded-xl shadow-md hover:shadow-lg">
+          <h2 className="text-lg font-bold mb-2">Predict Diseases</h2>
+          <p className="text-gray-600 mb-4">
+            Get recommendations for disease prevention and cure.
+          </p>
+          <Link
+            to="/disease-predictor"
+            className="option-link text-green-600 font-medium hover:underline"
+          >
+            Go to Disease Predictor
+          </Link>
         </div>
       </div>
+
+
+
 
       {/* Floating Round Chat Button */}
       <button

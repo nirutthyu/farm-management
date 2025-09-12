@@ -3,6 +3,7 @@ import joblib
 import json
 import os
 import re
+import tensorflow as tf
 import numpy as np
 from flask_cors import CORS
 import google.generativeai as genai
@@ -10,6 +11,7 @@ from dotenv import load_dotenv
 from sklearn.preprocessing import LabelEncoder
 import pickle
 import requests
+from PIL import Image
 from pymongo import MongoClient
 from werkzeug.security import generate_password_hash, check_password_hash
 
@@ -44,6 +46,29 @@ MODEL_PATH = "ferti_new.joblib"
 if not os.path.exists(MODEL_PATH):
     raise FileNotFoundError(f"Model file '{MODEL_PATH}' not found")
 knn_model = joblib.load(MODEL_PATH)
+# Class labels
+class_names = [
+    # "HEALTHY PADDY",
+    # "BACTERIAL LEAF BLIGHT OF PADDY",
+    # "BACTERIAL LEAF STREAK OF PADDY",
+    # "BAKANAE",
+    # "BROWN SPOT IN PADDY",
+    # "BLAST OF PADDY",
+    # "FALSE SMUT",
+    # "GRAIN DISCOLOURATION",
+    # "RICE TANGRO",
+    # "SHEATH BLIGHT OF PADDY",
+    # "SHEATH ROT OF PADDY"
+    "alterneria",
+    "bacterialblight",
+    "bollrot",
+    "fusarium wilt",
+    "grey",
+    "rootrot",
+    "verticillium wilt",
+    "healthy"
+
+]
 
 @app.route("/api/register", methods=["POST"])
 def register():
@@ -256,7 +281,120 @@ def get_products(username):
         return jsonify([])  # No products
 
     return jsonify(user["products"])
+@app.route('/api/chat', methods=['POST'])
+def chat_with_bot():
+    """
+    Farm management chatbot endpoint with multilingual support
+    """
+    try:
+        data = request.get_json()
+        
+        if not data or 'message' not in data:
+            return jsonify({"error": "Message is required"}), 400
+        
+        user_message = data.get('message', '')
+        language = data.get('language', 'english').lower()
+        
+        # Prepare the system prompt based on language
+        if language == 'tamil':
+            system_prompt = """
+            நீங்கள் ஒரு அனுபவமிக்க விவசாய நிபுணர் மற்றும் நண்பரான உதவியாளர். தமிழ் மொழியில் பதிலளிக்கவும்.
+            
+            நீங்கள் பின்வரும் விஷயங்களில் உதவ முடியும்:
+            - பயிர் மேலாண்மை மற்றும் பராமரிப்பு
+            - உரம் மற்றும் களைக்கொல்லி பரிந்துரைகள்
+            - நோய் மற்றும் பூச்சி கட்டுப்பாடு
+            - மண் பராமரிப்பு மற்றும் நீர் மேலாண்மை
+            - விதை தேர்வு மற்றும் விதைப்பு நேரம்
+            - அறுவடை மற்றும் சந்தைப்படுத்துதல் ஆலோசனைகள்
+            - வானிலை மற்றும் காலநிலை தொடர்பான ஆலோசனைகள்
+            - உதிரி பாகங்கள் மற்றும் விவசாய கருவிகள்
+ 
+            எளிய, நடைமுறை மற்றும் பயனுள்ள ஆலோசனைகளை வழங்கவும்.  
+            பதில்களை எண்களால் வரிசைப்படுத்தவும்.  
+            பதில்கள் கேள்விக்கு பொருத்தமான 5 வரிகள் மட்டும் இருக்க வேண்டும்.  
+            பதில்களில் * குறி பயன்படுத்த வேண்டாம்.
+            பதில்களின் முடிவில் தகவலின் மூலத்தை குறிப்பிடவும்.  
 
+            """
+        else:
+            system_prompt = """
+            You are an experienced agricultural expert and friendly assistant specializing in farm management.
+            
+            You can help with:
+            - Crop management and care
+            - Fertilizer and pesticide recommendations  
+            - Disease and pest control
+            - Soil care and water management
+            - Seed selection and planting times
+            - Harvesting and marketing advice
+            - Weather and climate-related guidance
+            - Farm equipment and tools
+            
+            Provide simple, practical, and helpful advice that farmers can easily understand and implement.
+            Keep the response strictly to 5 lines only, relevant to the farmer's question.
+            Be conversational and supportive in your responses provide it as numbered pointers dont exceed 200 words and dont include asterisks in the answer.
+            Also provide the source from which the information is taken.
+            """
+        
+        # Create the full prompt
+        full_prompt = f"{system_prompt}\n\nFarmer's Question: {user_message}\n\nResponse:"
+        
+        # Get response from Gemini
+        bot_response = get_gemini_chat_response(full_prompt)
+        
+        return jsonify({
+            "response": bot_response,
+            "language": language,
+            "timestamp": str(pd.Timestamp.now()) if 'pd' in globals() else None
+        })
+        
+    except Exception as e:
+        error_message = "Sorry, I'm having trouble processing your request right now. Please try again."
+        if language == 'tamil':
+            error_message = "மன்னிக்கவும், உங்கள் கோரிக்கையை செயல்படுத்துவதில் சிக்கல் உள்ளது. தயவுசெய்து மீண்டும் முயற்சிக்கவும்."
+        
+        return jsonify({
+            "response": error_message,
+            "error": str(e),
+            "language": data.get('language', 'english') if 'data' in locals() else 'english'
+        }), 500
+
+@app.route('/api/chat/translate', methods=['POST'])
+def translate_message():
+    """
+    Translate messages between Tamil and English using chat session
+    """
+    try:
+        data = request.get_json()
+        
+        if not data or 'text' not in data:
+            return jsonify({"error": "Text is required"}), 400
+        
+        text = data.get('text', '')
+        target_language = data.get('target_language', 'tamil').lower()
+        session_id = f"translate_{target_language}"
+        
+        if target_language == 'tamil':
+            message = f"Translate this to Tamil (keep it natural and conversational): {text}"
+            chat_language = "english"
+        else:
+            message = f"Translate this to English (keep it natural and conversational): {text}"
+            chat_language = "english"
+        
+        translated_text = get_gemini_chat_response(message, session_id, chat_language)
+        
+        return jsonify({
+            "original_text": text,
+            "translated_text": translated_text,
+            "target_language": target_language
+        })
+        
+    except Exception as e:
+        return jsonify({
+            "error": f"Translation failed: {str(e)}",
+            "original_text": data.get('text', '') if 'data' in locals() else ''
+        }), 500
 
 # Add your other chat endpoints here (unchanged)...
 @app.route('/api/chat/quick-tips', methods=['GET'])
@@ -278,6 +416,50 @@ def get_quick_tips():
     ]
     tips = default_tips_en if language == 'english' else default_tips_ta
     return jsonify({"tips": tips, "language": language})
+
+interpreter = tf.lite.Interpreter(model_path="model_unquant.tflite")
+interpreter.allocate_tensors()
+
+input_details = interpreter.get_input_details()
+output_details = interpreter.get_output_details()
+def predict(image_path):
+    # Preprocess
+    img = Image.open(image_path).resize((224, 224))  # match Teachable Machine
+    img = np.expand_dims(img, axis=0).astype(np.float32) / 255.0
+
+    interpreter.set_tensor(input_details[0]['index'], img)
+    interpreter.invoke()
+
+    preds = interpreter.get_tensor(output_details[0]['index'])[0]
+
+    predicted_index = np.argmax(preds)
+    confidence = float(preds[predicted_index])
+
+    return {
+        "class": class_names[predicted_index],
+        "confidence": confidence
+    }
+
+@app.route("/predict", methods=["POST"])
+def predict_route():
+    if "file" not in request.files:
+        return jsonify({"error": "No file uploaded"}), 400
+
+    file = request.files["file"]
+
+    # Save temporarily
+    filepath = os.path.join("uploads", file.filename)
+    os.makedirs("uploads", exist_ok=True)
+    file.save(filepath)
+
+    # Call the helper
+    result = predict(filepath)
+
+    # Optionally, clean up file
+    os.remove(filepath)
+
+    return jsonify(result)
+
 
 
 
