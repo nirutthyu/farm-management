@@ -10,12 +10,18 @@ from dotenv import load_dotenv
 from sklearn.preprocessing import LabelEncoder
 import pickle
 import requests
+from pymongo import MongoClient
+from werkzeug.security import generate_password_hash, check_password_hash
 
 app = Flask(__name__)
 CORS(app)
 load_dotenv()  
 API_KEY = "158dbd3bb6a543d89d7115734251209"
 BASE_URL = "http://api.weatherapi.com/v1/forecast.json"
+client = MongoClient("mongodb://localhost:27017/")
+db = client.farmUsers
+users_collection = db.users
+
 genai.configure(api_key=os.getenv("GOOGLE_API_KEY"))
 
 # Load the fertilizer guide
@@ -38,6 +44,50 @@ MODEL_PATH = "ferti_new.joblib"
 if not os.path.exists(MODEL_PATH):
     raise FileNotFoundError(f"Model file '{MODEL_PATH}' not found")
 knn_model = joblib.load(MODEL_PATH)
+
+@app.route("/api/register", methods=["POST"])
+def register():
+    data = request.json
+    name = data.get("name")
+    password = data.get("password")
+    land_size = data.get("landSize")
+    soil_type = data.get("soilType")
+    location = data.get("location")
+
+    if users_collection.find_one({"name": name}):
+        return jsonify({"message": "Username already exists"}), 400
+
+    hashed_password = generate_password_hash(password)
+    users_collection.insert_one({
+        "name": name,
+        "password": hashed_password,
+        "landSize": land_size,
+        "soilType": soil_type,
+        "location": location
+    })
+    return jsonify({"message": "Registration successful!"}), 201
+
+@app.route("/api/login", methods=["POST"])
+def login():
+    data = request.json
+    name = data.get("name")
+    password = data.get("password")
+
+    user = users_collection.find_one({"name": name})
+    
+    if not user:
+        return jsonify({"message": "User not found"}), 404
+
+    if not check_password_hash(user["password"], password):
+        return jsonify({"message": "Incorrect password"}), 401
+    
+    # You can return more user details if needed
+    return jsonify({"message": "Login successful", "user": {
+        "name": user["name"],
+        "landSize": user["landSize"],
+        "soilType": user["soilType"],
+        "location": user["location"]
+    }}), 200
 
 def get_gemini_response(input_prompt, model_type="gemini-1.5-flash"):
     model = genai.GenerativeModel(model_type)
@@ -152,6 +202,61 @@ def get_forecast():
     data = response.json()
     forecast_data = [{"date": day["date"], "chance_of_rain": day["day"]["daily_chance_of_rain"]} for day in data["forecast"]["forecastday"]]
     return jsonify(forecast_data)
+@app.route("/api/users/<username>/products", methods=["POST"])
+def add_product(username):
+    """
+    Adds a product to the user's products array in MongoDB.
+    If products array does not exist, creates it.
+    """
+    data = request.get_json()
+    product_name = data.get("name")
+    price = data.get("price")
+
+    if not product_name or price is None:
+        return jsonify({"error": "Product name and price are required"}), 400
+
+    # Convert price to float
+    try:
+        price = float(price)
+    except ValueError:
+        return jsonify({"error": "Price must be a number"}), 400
+
+    # Find user
+    user = users_collection.find_one({"name": username})
+
+    if not user:
+        # Optional: create user if doesn't exist
+        users_collection.insert_one({
+            "name": username,
+            "products": [{"name": product_name, "price": price}]
+        })
+        return jsonify({"message": "User created and product added"}), 201
+
+    # If user exists, update the products array
+    if "products" in user:
+        users_collection.update_one(
+            {"name": username},
+            {"$push": {"products": {"name": product_name, "price": price}}}
+        )
+    else:
+        users_collection.update_one(
+            {"name": username},
+            {"$set": {"products": [{"name": product_name, "price": price}]}}
+        )
+
+    return jsonify({"message": "Product added successfully"}), 200
+@app.route("/api/users/<username>/products", methods=["GET"])
+def get_products(username):
+    """
+    Fetch all products for a user.
+    """
+    user = users_collection.find_one({"name": username})
+
+    if not user or "products" not in user:
+        return jsonify([])  # No products
+
+    return jsonify(user["products"])
+
 
 # Add your other chat endpoints here (unchanged)...
 @app.route('/api/chat/quick-tips', methods=['GET'])

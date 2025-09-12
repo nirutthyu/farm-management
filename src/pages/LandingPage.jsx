@@ -1,7 +1,9 @@
 import React, { useEffect, useState } from "react";
-import { Link } from "react-router-dom";
+import { Link,useLocation } from "react-router-dom";
 
 export default function LandingPage() {
+  const location = useLocation();
+  const user = location.state?.user; // Get user info from navigate state
   const [username, setUsername] = useState("");
   const [chatOpen, setChatOpen] = useState(false);
   const [messages, setMessages] = useState([]);
@@ -11,16 +13,18 @@ export default function LandingPage() {
   const [quickTips, setQuickTips] = useState([]);
 
   useEffect(() => {
-    // Get username from memory instead of localStorage
-    const storedUsername = "Farmer"; // Default username or get from props/context
-    setUsername(storedUsername);
-    
-    // Load quick tips when component mounts
+     if (user) {
+      setUsername(user.name); 
+    } else {
+
+      setUsername("Farmer");
+    }
+
     loadQuickTips();
   }, []);
 
   useEffect(() => {
-    // Reload quick tips when language changes
+
     loadQuickTips();
   }, [language]);
 
@@ -29,7 +33,7 @@ export default function LandingPage() {
       const response = await fetch(`http://localhost:5000/api/chat/quick-tips?language=${language}`);
       const data = await response.json();
       if (data.tips) {
-        setQuickTips(data.tips.slice(0, 3)); // Show only 3 tips
+        setQuickTips(data.tips.slice(0, 3)); 
       }
     } catch (error) {
       console.error("Error loading quick tips:", error);
@@ -39,7 +43,7 @@ export default function LandingPage() {
   const sendMessage = async (messageText) => {
     if (!messageText.trim()) return;
 
-    // Add user message to chat
+
     const userMessage = { sender: "user", text: messageText, timestamp: new Date() };
     setMessages(prev => [...prev, userMessage]);
     setInput("");

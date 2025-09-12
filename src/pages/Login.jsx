@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 import { useNavigate, Link } from "react-router-dom";
-import { db, ref, get, child } from "../firebase";
+import axios from "axios";
 
 export default function LoginForm() {
   const [loginData, setLoginData] = useState({ name: "", password: "" });
@@ -13,22 +13,20 @@ export default function LoginForm() {
   const handleSubmit = async (e) => {
     e.preventDefault();
 
-    const dbRef = ref(db);
     try {
-      const snapshot = await get(child(dbRef, `users/${loginData.name}`));
-      if (snapshot.exists()) {
-        const userData = snapshot.val();
-        if (userData.password === loginData.password) {
-          localStorage.setItem("username", loginData.name); // ✅ Save to show on Landing Page
-          navigate("/home"); // ✅ Go to landing
-        } else {
-          alert("Incorrect password.");
-        }
-      } else {
-        alert("User not found.");
-      }
+      const res = await axios.post("http://localhost:5000/api/login", loginData);
+
+      // Save user info to localStorage
+      localStorage.setItem("username", res.data.user.name);
+      localStorage.setItem("landSize", res.data.user.landSize);
+      localStorage.setItem("soilType", res.data.user.soilType);
+      localStorage.setItem("location", res.data.user.location);
+
+      
+      navigate("/home", { state: { user: res.data.user } });; // Go to landing page
     } catch (error) {
       console.error("Login error:", error);
+      alert(error.response?.data?.message || "Login failed");
     }
   };
 
@@ -45,6 +43,7 @@ export default function LoginForm() {
           onChange={handleChange}
           required
         />
+
         <label htmlFor="password">Password:</label>
         <input
           type="password"
@@ -54,9 +53,12 @@ export default function LoginForm() {
           onChange={handleChange}
           required
         />
+
         <button type="submit">Login</button>
       </form>
-      <p>Don't have an account? <Link to="/">Register</Link></p>
+      <p>
+        Don't have an account? <Link to="/">Register</Link>
+      </p>
     </div>
   );
 }
