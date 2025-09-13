@@ -3,13 +3,50 @@ import { motion } from "framer-motion";
 
 export default function SensorControl() {
   const [forecast, setForecast] = useState([]);
-  
+  const [sensorStatus, setSensorStatus] = useState("off"); // new state for buttons
+  const [relayStatus, setRelayStatus] = useState("Unknown");
+  const [temperature, setTemperature] = useState(null);
+  const [humidity, setHumidity] = useState(null);
+
+  // Fetch status from Flask
+  const fetchStatus = async () => {
+    try {
+      const res = await fetch("http://10.208.25.66:5000/status");
+      const data = await res.json();
+      setRelayStatus(data.relay);
+      setTemperature(data.temperature);
+      setHumidity(data.humidity);
+    } catch (err) {
+      console.error("Status fetch error:", err);
+    }
+  };
+  // SensorControl.jsx (only relevant changes)
+const turnOnRelay = async () => {
+  try {
+    await fetch("http://10.208.25.66:5000/on"); // call backend
+    setSensorStatus("on"); // update local state
+    fetchStatus(); // fetch current relay status & sensor info
+  } catch (err) {
+    console.error("Failed to turn on relay:", err);
+  }
+};
+
+const turnOffRelay = async () => {
+  try {
+    await fetch("http://10.208.25.66:5000/off"); // call backend
+    setSensorStatus("off"); // update local state
+    fetchStatus();
+  } catch (err) {
+    console.error("Failed to turn off relay:", err);
+  }
+};
+
   useEffect(() => {
     fetch("http://localhost:5000/forecast")
       .then((res) => res.json())
       .then((data) => setForecast(data));
   }, []);
-  
+
   return (
     <motion.div
       className="sensor-container p-6 bg-white rounded-2xl shadow-lg mx-auto max-w-6xl"
@@ -20,7 +57,38 @@ export default function SensorControl() {
       <h2 className="text-2xl font-bold mb-6 text-center text-gray-800">
         🌦 Weekly Rain Forecast – Madurai
       </h2>
-      
+
+    <div className="flex justify-center gap-4 mb-6">
+  <button
+    onClick={turnOnRelay}
+    className={`px-6 py-2 rounded-lg font-semibold ${
+      sensorStatus === "on" ? "bg-green-500 text-white" : "bg-gray-200 text-gray-800"
+    }`}
+  >
+    On
+  </button>
+  <br></br>
+  <br></br>
+  <button
+    onClick={turnOffRelay}
+    // className={`px-6 py-2 rounded-lg font-semibold ${
+    //   sensorStatus === "off" ? "bg-red-500 text-white" : "bg-gray-200 text-gray-800"
+    // }`}
+  >
+    Off
+  </button>
+</div>
+
+
+      {/* Current sensor status */}
+      {/* <p className="text-center text-gray-700 mb-4">
+        Sensor is currently:{" "}
+        <span className={sensorStatus === "on" ? "text-green-600 font-bold" : "text-red-600 font-bold"}>
+          {sensorStatus.toUpperCase()}
+        </span>
+      </p> */}
+      <br></br>
+
       {forecast.length === 0 ? (
         <p className="text-gray-500 text-center">Loading forecast...</p>
       ) : (

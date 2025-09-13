@@ -278,14 +278,14 @@ button {
 .hero-section {
   color: white;
   text-align: center;
-  padding: 60px 20px;
+  padding:20px;
   margin-bottom: 50px;
  
 }
 
 
 .hero-title {
-  font-size: 3rem;
+  font-size: 2rem;
   font-weight: bold;
   margin-bottom: 10px;
 }

@@ -13,6 +13,8 @@ import pickle
 import requests
 from PIL import Image
 from pymongo import MongoClient
+from bson.objectid import ObjectId
+import datetime
 from werkzeug.security import generate_password_hash, check_password_hash
 
 app = Flask(__name__)
@@ -23,6 +25,7 @@ BASE_URL = "http://api.weatherapi.com/v1/forecast.json"
 client = MongoClient("mongodb://localhost:27017/")
 db = client.farmUsers
 users_collection = db.users
+trace_collection = db.traceability 
 
 genai.configure(api_key=os.getenv("GOOGLE_API_KEY"))
 
@@ -460,7 +463,74 @@ def predict_route():
 
     return jsonify(result)
 
+@app.route('/api/trace', methods=['POST'])
+def save_trace_data():
+    try:
+        data = request.get_json()
 
+        required_fields = ['user','product', 'batchNumber', 'location', 'notes', 'timestamp']
+        for field in required_fields:
+            if field not in data:
+                return jsonify({"error": f"Missing field: {field}"}), 400
+            
+        # Insert into MongoDB
+        result = trace_collection.insert_one({
+            "user":data["user"],
+            "product": data['product'],
+            "batchNumber": data['batchNumber'],
+            "location": data['location'],
+            "notes": data['notes'],
+            "timestamp": data['timestamp'],
+        })
+
+        return jsonify({"message": "Trace data saved successfully", "id": str(result.inserted_id)}), 201
+
+    except Exception as e:
+        print("Trace error:", e)
+        return jsonify({"error": "Failed to save trace data"}), 500
+    
+# @app.route('/api/trace', methods=['GET'])
+# def get_trace_data():
+#     try:
+#         print("Fetching trace data from DB...")
+#         traces = list(trace_collection.find().sort("timestamp", -1).limit(10))
+#         print(f"Fetched {len(traces)} traces")
+#         for trace in traces:
+#             trace['_id'] = str(trace['_id'])
+#             if 'timestamp' in trace and isinstance(trace['timestamp'], datetime.datetime):
+#                 trace['timestamp'] = trace['timestamp'].isoformat()
+#         return jsonify({"traces": traces}), 200
+#     except Exception as e:
+#         print("Error fetching trace data:", e)
+#         return jsonify({"error": "Failed to fetch trace data"}), 500
+@app.route('/api/trace', methods=['GET'])
+def get_trace_data():
+    try:
+        # 1️⃣ Get username from query params
+        username = request.args.get("user")
+        if not username:
+            return jsonify({"error": "User not specified"}), 400
+
+        print(f"Fetching trace data for user: {username}")
+
+        # 2️⃣ Query MongoDB for that user only
+        traces = list(
+            trace_collection.find({"user": username})
+            .sort("timestamp", -1)  # latest first
+            .limit(10)
+        )
+
+        # 3️⃣ Convert ObjectId and datetime to JSON-friendly format
+        for trace in traces:
+            trace["_id"] = str(trace["_id"])
+            if "timestamp" in trace and isinstance(trace["timestamp"], datetime.datetime):
+                trace["timestamp"] = trace["timestamp"].isoformat()
+
+        return jsonify({"traces": traces}), 200
+
+    except Exception as e:
+        print("Error fetching trace data:", e)
+        return jsonify({"error": "Failed to fetch trace data"}), 500
 
 
 if __name__ == "__main__":

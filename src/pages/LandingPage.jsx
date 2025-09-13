@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import { Link,useLocation } from "react-router-dom";
+import { Link,useLocation,useNavigate } from "react-router-dom";
 
 export default function LandingPage() {
   const location = useLocation();
@@ -11,17 +11,54 @@ export default function LandingPage() {
   const [isLoading, setIsLoading] = useState(false);
   const [language, setLanguage] = useState("english");
   const [quickTips, setQuickTips] = useState([]);
+  const navigate = useNavigate();
+  const [traces, setTraces] = useState([]);
+  const [currentTraceIndex, setCurrentTraceIndex] = useState(0);
 
-  useEffect(() => {
-     if (user) {
-      setUsername(user.name); 
-    } else {
+  // useEffect(() => {
+  //    if (user) {
+  //     setUsername(user.name); 
+  //   } else {
+  //     setUsername("Farmer");
+  //   }
+  //   fetchTraceData();
 
-      setUsername("Farmer");
-    }
+  //   loadQuickTips();
+  // }, []);
+  //  const fetchTraceData = async () => {
+  //   try {
+  //     const res = await fetch(`http://localhost:5000/api/trace?user=${user}`);
+  //     const data = await res.json();
+  //     if (res.ok && data.traces) {
+  //       setTraces(data.traces);
+  //     }
+  //   } catch (err) {
+  //     console.error("Failed to fetch trace data", err);
+  //   }
+  // };
+useEffect(() => {
+    const name = user?.name || "Farmer"; // fallback
+    setUsername(name);
 
-    loadQuickTips();
-  }, []);
+    const fetchTraceData = async () => {
+      try {
+        const res = await fetch(
+          `http://localhost:5000/api/trace?user=${name}`
+        );
+        const data = await res.json();
+        if (res.ok && data.traces) {
+          setTraces(data.traces);
+        } else {
+          console.error("Error fetching traces:", data.error);
+        }
+      } catch (err) {
+        console.error("Failed to fetch trace data:", err);
+      }
+    };
+
+    fetchTraceData();
+  }, [user]);
+
 
   useEffect(() => {
 
@@ -221,8 +258,171 @@ export default function LandingPage() {
           </Link>
         </div>
       </div>
+ 
+
+      {traces.length > 0 && (
+  <div
+    style={{
+      margin: "40px auto",
+      maxWidth: "100%",
+      textAlign: "center",
+    }}
+  >
+    <h2 style={{ color: "#f7f4f4ff" }}>Recent Traceability Records of {username}</h2>
+
+    <div
+      style={{
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "center",
+        gap: "5px",
+        marginTop: "20px",
+        position: "relative",
+      }}
+    >
+      {/* Left Arrow */}
+      <button
+        onClick={() => setCurrentTraceIndex((prev) => Math.max(prev - 1, 0))}
+        disabled={currentTraceIndex === 0}
+        style={{
+          // background: "none",
+          // border: "none",
+          // fontSize: "28px",
+          // cursor: currentTraceIndex === 0 ? "not-allowed" : "pointer",
+          // color: "#fff",
+          width: "40px",
+    height: "40px",
+    borderRadius: "50%",
+    border: "2px solid white",
+    backgroundColor: "rgba(255, 255, 255, 0.2)",
+    color: "white",
+    fontSize: "20px",
+    cursor: currentTraceIndex === 0 ? "not-allowed" : "pointer",
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "center",
+    transition: "background 0.3s, transform 0.2s",
+    marginRight: "10px", // Closer to the card
+        }}
+      >
+        &#8592;
+      </button>
+
+      {/* Current Trace Card */}
+      <div
+        style={{
+          minWidth: "400px",
+          maxWidth: "200px",
+          background: "#f9f9f9",
+          borderRadius: "12px",
+          padding: "20px",
+          boxShadow: "0 4px 8px rgba(0,0,0,0.1)",
+          textAlign: "left",
+        }}
+      >
+        <h3 style={{ color: "#007bff", marginBottom: "10px" }}>
+          {traces[currentTraceIndex].product}
+        </h3>
+        <p>
+          <strong>Batch:</strong> {traces[currentTraceIndex].batchNumber}
+        </p>
+        <p>
+          <strong>Location:</strong> {traces[currentTraceIndex].location}
+        </p>
+        <p>
+          <strong>Notes:</strong> {traces[currentTraceIndex].notes || "N/A"}
+        </p>
+        <p
+          style={{
+            fontSize: "12px",
+            color: "#666",
+            marginTop: "10px",
+          }}
+        >
+          {/* {new Date(traces[currentTraceIndex].timestamp).toLocaleString()} */}
+          {new Date(traces[currentTraceIndex].timestamp).toLocaleString(
+                  "en-IN",
+                  {
+                    timeZone: "Asia/Kolkata",
+                    year: "numeric",
+                    month: "2-digit",
+                    day: "2-digit",
+                    hour: "2-digit",
+                    minute: "2-digit",
+                    second: "2-digit",
+                  }
+                )}
+                
+        </p>
+      </div>
+
+      {/* Right Arrow */}
+      <button
+        onClick={() =>
+          setCurrentTraceIndex((prev) =>
+            Math.min(prev + 1, traces.length - 1)
+          )
+        }
+        disabled={currentTraceIndex === traces.length - 1}
+        style={{
+          // background: "none",
+          // border: "none",
+          // fontSize: "28px",
+          // cursor:
+          //   currentTraceIndex === traces.length - 1 ? "not-allowed" : "pointer",
+          // color: "#fff",
+          width: "40px",
+    height: "40px",
+    borderRadius: "50%",
+    border: "2px solid white",
+    backgroundColor: "rgba(255, 255, 255, 0.2)",
+    color: "white",
+    fontSize: "20px",
+    cursor:
+      currentTraceIndex === traces.length - 1
+        ? "not-allowed"
+        : "pointer",
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "center",
+    transition: "background 0.3s, transform 0.2s",
+    marginLeft: "10px", // Closer to the card
+        }}
+      >
+        &#8594;
+      </button>
+    </div>
+
+    {/* Optional: Show current index */}
+    <p style={{ marginTop: "10px", color: "#fff" }}>
+      {currentTraceIndex + 1} of {traces.length}
+    </p>
+  </div>
+)}
 
 
+ 
+    <button
+        onClick={() => navigate("/trace")}
+        style={{
+          position: "fixed",
+          top: "90px", // Below chat button
+          right: "20px",
+          width: "60px",
+          height: "60px",
+          borderRadius: "50%",
+          backgroundColor: "#007bff",
+          color: "white",
+          border: "none",
+          fontSize: "22px",
+          cursor: "pointer",
+          boxShadow: "0px 4px 6px rgba(0,0,0,0.2)",
+          zIndex: 1001,
+        }}
+        title="Go to Trace"
+      >
+        🔍
+      </button>
 
 
       {/* Floating Round Chat Button */}
