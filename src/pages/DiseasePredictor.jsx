@@ -11,45 +11,66 @@ export default function DiseasePredictor() {
       description: "The plant is healthy. No visible disease symptoms detected.",
       remedy: "Continue normal farming practices and preventive care.",
     },
-    "BACTERIAL LEAF BLIGHT OF PADDY": {
-      description: "Caused by Xanthomonas oryzae. Symptoms include wilting and yellowing of leaves.",
-      remedy: "Use resistant varieties, avoid high nitrogen, apply copper-based fungicides.",
+    "HISPA IN PADDY": {
+      description: "Leaves get scraped, whitish streaks appear due to beetle feeding.",
+      remedy: "Use insecticides like chlorpyrifos, and remove affected leaves.",
     },
-    "BACTERIAL LEAF STREAK OF PADDY": {
+    "BACTERIAL LEAF BLIGHT IN PADDY": {
+      description:
+        "Caused by Xanthomonas oryzae. Symptoms include wilting and yellowing of leaves.",
+      remedy: "Use resistant varieties, avoid excess nitrogen, apply copper fungicides.",
+    },
+    "BACTERIAL LEAF STREAK IN PADDY": {
       description: "Characterized by thin, yellow-orange streaks between veins.",
       remedy: "Ensure proper drainage, use resistant seeds, avoid excessive nitrogen.",
     },
-    "BAKANAE": {
-      description: "Caused by Fusarium fujikuroi. Leads to abnormal elongation and weak stems.",
-      remedy: "Use fungicide-treated seeds, maintain clean nursery beds.",
+    "BACTERIAL PANACLE BLIGHT IN PADDY": {
+      description: "Affects rice panicles, causing sterility and poor grain filling.",
+      remedy: "Use clean seeds, apply bactericides, and practice field sanitation.",
     },
-    "BROWN SPOT IN PADDY": {
-      description: "Small brown lesions on leaves, reducing photosynthesis.",
-      remedy: "Apply balanced fertilizers, treat seeds with fungicides.",
-    },
-    "BLAST OF PADDY": {
-      description: "Caused by Magnaporthe oryzae. Triangular lesions on leaves and stems.",
+    "BLAST IN PADDY": {
+      description: "Caused by Magnaporthe oryzae. Triangular lesions appear on leaves/stems.",
       remedy: "Use resistant varieties, apply tricyclazole fungicide.",
     },
-    "FALSE SMUT": {
-      description: "Greenish spore balls appear on rice grains.",
-      remedy: "Apply copper fungicides, practice crop rotation.",
+    "BROWN SPOT IN PADDY": {
+      description: "Small brown lesions reduce photosynthesis and yield.",
+      remedy: "Apply balanced fertilizers, treat seeds with fungicides.",
     },
-    "GRAIN DISCOLOURATION": {
-      description: "Rice grains appear black or brown, reducing quality.",
-      remedy: "Dry grains properly, store under dry conditions.",
+    "DEAD HEART IN PADDY": {
+      description: "Stem borer larvae kill the central shoot, leading to dead hearts.",
+      remedy: "Apply insecticides, destroy stubbles, and adopt pheromone traps.",
     },
-    "RICE TANGRO": {
-      description: "Viral disease spread by green leafhoppers.",
-      remedy: "Control vector population, use resistant varieties.",
+    "DOWNY MILDEW IN PADDY": {
+      description: "Fungal disease causing whitish growth on leaves.",
+      remedy: "Apply metalaxyl fungicide, avoid waterlogging.",
     },
-    "SHEATH BLIGHT OF PADDY": {
-      description: "Caused by Rhizoctonia solani, lesions form on sheaths and spread.",
-      remedy: "Maintain proper spacing, apply fungicides like hexaconazole.",
+    "TUNGRO IN PADDY": {
+      description: "Viral disease transmitted by leafhoppers. Plants appear stunted.",
+      remedy: "Control leafhopper population, use resistant varieties.",
     },
-    "SHEATH ROT OF PADDY": {
-      description: "Lesions at panicle base, grains remain chaffy.",
-      remedy: "Avoid high nitrogen, apply carbendazim fungicide.",
+    "APHIDS IN COTTON": {
+      description: "Aphids suck sap, leading to curling and stunted growth.",
+      remedy: "Spray imidacloprid or neem oil.",
+    },
+    "ARMY WORM IN COTTON": {
+      description: "Larvae feed on leaves, causing skeletonized foliage.",
+      remedy: "Use biological control (Trichogramma), apply insecticides if severe.",
+    },
+    "BACTERIAL BLIGHT IN COTTON": {
+      description: "Angular leaf spots, boll rot, and black veins.",
+      remedy: "Use resistant varieties, copper fungicides, and crop rotation.",
+    },
+    "POWDERY MILDEW IN COTTON": {
+      description: "White powdery fungal growth on leaves.",
+      remedy: "Apply sulfur fungicides or systemic fungicides.",
+    },
+    "TARGET SPOTS IN COTTON": {
+      description: "Circular brown spots with concentric rings on leaves.",
+      remedy: "Apply fungicides like carbendazim, ensure proper spacing.",
+    },
+    "HEALTHY COTTON": {
+      description: "The plant is healthy with no signs of pests or diseases.",
+      remedy: "Continue good agricultural practices.",
     },
   };
 
@@ -57,9 +78,7 @@ export default function DiseasePredictor() {
     const selectedFile = e.target.files[0];
     setFile(selectedFile);
     setResult(null);
-    if (selectedFile) {
-      setPreview(URL.createObjectURL(selectedFile));
-    }
+    if (selectedFile) setPreview(URL.createObjectURL(selectedFile));
   };
 
   const handleUpload = async () => {
@@ -70,15 +89,12 @@ export default function DiseasePredictor() {
 
     try {
       setLoading(true);
-
       const res = await fetch("http://127.0.0.1:5000/predict", {
         method: "POST",
         body: formData,
       });
 
-      if (!res.ok) {
-        throw new Error(`Server responded with ${res.status}`);
-      }
+      if (!res.ok) throw new Error(`Server responded with ${res.status}`);
 
       const data = await res.json();
       setResult(data);
@@ -91,59 +107,133 @@ export default function DiseasePredictor() {
   };
 
   const diseaseDetails = result ? diseaseInfo[result.class] : null;
-
   return (
-    <div className="p-6 max-w-md mx-auto bg-white shadow-lg rounded-2xl text-center">
-      <h2 className="text-xl font-bold mb-4">🌾 Paddy Plant Disease Detector</h2>
+    <div style={styles.container}>
+      {/* Upload Card */}
+      <div style={styles.card}>
+        <h2 style={styles.heading}>🌱 Plant Disease Detector</h2>
 
-      <input
-        type="file"
-        accept="image/*"
-        onChange={handleFileChange}
-        className="mb-4"
-      />
+        <input
+          type="file"
+          accept="image/*"
+          onChange={handleFileChange}
+          style={styles.fileInput}
+        />
 
-      {preview && (
-        <div className="mb-4">
-          <img
-            src={preview}
-            alt="preview"
-            className="w-64 h-64 object-cover mx-auto rounded-lg border"
-          />
-        </div>
-      )}
+        {preview && (
+          <div style={styles.previewContainer}>
+            <img src={preview} alt="preview" style={styles.previewImage} />
+          </div>
+        )}
 
-      <button
-        onClick={handleUpload}
-        disabled={loading}
-        className="bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700 disabled:opacity-50"
-      >
-        {loading ? "Predicting..." : "Predict"}
-      </button>
+        <button
+          onClick={handleUpload}
+          disabled={loading}
+          style={loading ? { ...styles.button, ...styles.disabledButton } : styles.button}
+        >
+          {loading ? "Predicting..." : "Predict"}
+        </button>
+      </div>
 
+      {/* Result Card */}
       {result && (
-        <div className="container-fluid bg-light">
-        <div className="mt-6 p-4 bg-gray-100 rounded-lg text-left">
-          <h3 className="text-lg font-semibold">
-            Prediction: <span className="text-green-700">{result.class}</span>
+        <div style={styles.resultCard}>
+          <h3 style={styles.resultHeading}>
+            Prediction: <span style={styles.prediction}>{result.class}</span>
           </h3>
-          <p className="text-white-700">
+          <p style={styles.confidence}>
             Confidence: {(result.confidence * 100).toFixed(2)}%
           </p>
 
-          {diseaseDetails && (
-            <div className="mt-3">
-              <p className="text-grey800">
+          {diseaseDetails ? (
+            <div style={styles.details}>
+              <p>
                 <strong>Description:</strong> {diseaseDetails.description}
               </p>
-              <p className="text-grey-800 mt-2">
+              <p>
                 <strong>Recommended Action:</strong> {diseaseDetails.remedy}
               </p>
             </div>
+          ) : (
+            <p style={styles.noDetails}>No additional information available.</p>
           )}
-        </div>
         </div>
       )}
     </div>
   );
 }
+
+const styles = {
+  container: {
+    padding: "2rem",
+    maxWidth: "700px",
+    margin: "0 auto",
+    fontFamily: "'Segoe UI', Tahoma, Geneva, Verdana, sans-serif",
+  },
+  card: {
+    backgroundColor: "#fff",
+    padding: "2rem",
+    borderRadius: "20px",
+    boxShadow: "0 8px 20px rgba(0,0,0,0.1)",
+    textAlign: "center",
+    marginBottom: "2rem",
+  },
+  heading: {
+    fontSize: "2rem",
+    fontWeight: "700",
+    marginBottom: "1.5rem",
+    color: "#2F855A",
+  },
+  fileInput: {
+    marginBottom: "1rem",
+  },
+  previewContainer: {
+    marginBottom: "1rem",
+  },
+  previewImage: {
+    width: "250px",
+    height: "200px",
+    objectFit: "cover",
+    borderRadius: "12px",
+    border: "2px solid #E2E8F0",
+  },
+  button: {
+    backgroundColor: "#2F855A",
+    color: "#fff",
+    padding: "0.75rem 2rem",
+    border: "none",
+    borderRadius: "12px",
+    cursor: "pointer",
+    fontSize: "1rem",
+    transition: "background-color 0.3s",
+  },
+  disabledButton: {
+    opacity: 0.6,
+    cursor: "not-allowed",
+  },
+  resultCard: {
+    backgroundColor: "#fff",
+    padding: "2rem",
+    borderRadius: "20px",
+    boxShadow: "0 8px 20px rgba(0,0,0,0.1)",
+  },
+  resultHeading: {
+    fontSize: "1.5rem",
+    fontWeight: "600",
+    marginBottom: "1rem",
+  },
+  prediction: {
+    color: "#2F855A",
+  },
+  confidence: {
+    color: "#4A5568",
+    marginBottom: "1rem",
+  },
+  details: {
+    color: "#2D3748",
+    lineHeight: "1.6",
+  },
+  noDetails: {
+    color: "#E53E3E",
+  },
+};

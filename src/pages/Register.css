@@ -1,0 +1,10 @@
+.register-container input,
+.register-container select {
+  width: 100%;       /* make all inputs/selects full width */
+  padding: 10px 12px; /* consistent padding */
+  font-size: 16px;    /* same font size */
+  border-radius: 6px; /* rounded corners */
+  border: 1px solid #ccc; /* consistent border */
+  box-sizing: border-box;
+  margin-bottom: 15px; /* space between inputs */
+}

@@ -51,28 +51,23 @@ if not os.path.exists(MODEL_PATH):
 knn_model = joblib.load(MODEL_PATH)
 # Class labels
 class_names = [
-    # "HEALTHY PADDY",
-    # "BACTERIAL LEAF BLIGHT OF PADDY",
-    # "BACTERIAL LEAF STREAK OF PADDY",
-    # "BAKANAE",
-    # "BROWN SPOT IN PADDY",
-    # "BLAST OF PADDY",
-    # "FALSE SMUT",
-    # "GRAIN DISCOLOURATION",
-    # "RICE TANGRO",
-    # "SHEATH BLIGHT OF PADDY",
-    # "SHEATH ROT OF PADDY"
-    "alterneria",
-    "bacterialblight",
-    "bollrot",
-    "fusarium wilt",
-    "grey",
-    "rootrot",
-    "verticillium wilt",
-    "healthy"
-
+    "HISPA IN PADDY",
+    "BACTERIAL LEAF BLIGHT IN PADDY",
+    "BACTERIAL LEAF STREAK IN PADDY",
+    "BACTERIAL PANACLE BLIGHT IN PADDY",
+    "BLAST IN PADDY",
+    "BROWN SPOT IN PADDY",
+    "DEAD HEART IN PADDY",
+    "DOWNY MILDEW IN PADDY",
+    "HEALTHY PADDY",
+    "TUNGRO IN PADDY",
+    "APHIDS IN COTTON",
+    "ARMY WORM IN COTTON",
+    "BACTERIAL BLIGHT IN COTTON",
+    "POWDERY MILDEW IN COTTON",
+    "TARGET SPOTS IN COTTON",
+    "HEALTHY COTTON"
 ]
-
 @app.route("/api/register", methods=["POST"])
 def register():
     data = request.json
